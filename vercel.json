@@ -7,11 +7,16 @@
     },
     "backend": {
       "root": "server/",
-      "framework": "express",
-      "entrypoint": "app.js"
+      "framework": "express"
     }
   },
   "rewrites": [
+    {
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
+    },
     {
       "source": "/api/(.*)",
       "destination": {
