@@ -320,6 +320,50 @@ const loadBookingHistory = async () => {
     setHistoryLoading(false);
   }
 };
+const cancelBooking = async (bookingId) => {
+  if (!bookingId) return;
+
+  const confirmed = window.confirm(
+    "Are you sure you want to cancel this booking?"
+  );
+
+  if (!confirmed) return;
+
+  const savedToken = localStorage.getItem("token");
+
+  if (!savedToken) {
+    notify("Please log in again to cancel this booking.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/bookings/${bookingId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${savedToken}`,
+      },
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Could not cancel this booking."
+      );
+    }
+
+    notify("Booking cancelled successfully.");
+
+    // Reload bookings so the cancelled booking
+    // immediately appears with its new status.
+    await loadBookingHistory();
+
+    // Refresh shows so the released seats become available.
+    await loadShows();
+  } catch (err) {
+    notify(err.message || "Could not cancel this booking.");
+  }
+};
 
   return (
     <div className="app">
@@ -886,8 +930,16 @@ const loadBookingHistory = async () => {
                     {show.venue || show.location || "Local Theatre"}
                   </span>
                 </div>
-                <span className="booking-status">
-                  {status}
+                <span
+                  className={`booking-status ${
+                    String(status).toLowerCase() === "cancelled"
+                      ? "cancelled"
+                      : "confirmed"
+                  }`}
+                >
+                  {String(status).toLowerCase() === "cancelled"
+                    ? "Cancelled"
+                    : "Confirmed"}
                 </span>
               </div>
 
@@ -922,20 +974,38 @@ const loadBookingHistory = async () => {
               </div>
 
               <div className="history-ticket-footer">
+            <div>
+              <span>
+                Booking ID: {bookingItem.bookingCode || bookingItem._id}
+              </span>
+
+              {bookingDate && (
                 <span>
-                  Booking ID: {bookingItem.bookingCode || bookingItem._id}
+                  Booked on{" "}
+                  {new Date(bookingDate).toLocaleDateString("en-IN")}
                 </span>
-                {bookingDate && (
-                  <span>
-                    Booked on{" "}
-                    {new Date(bookingDate).toLocaleDateString("en-IN")}
-                  </span>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              )}
+            </div>
+
+            {String(status).toLowerCase() === "cancelled" ? (
+              <span className="cancelled-label">
+                Booking cancelled
+              </span>
+            ) : (
+              <button
+                className="cancel-booking-btn"
+                onClick={() =>
+                  cancelBooking(bookingItem._id || bookingItem.id)
+                }
+              >
+                Cancel Booking
+              </button>
+            )}
+          </div>
+                      </article>
+                    );
+                  })}
+                </div>
     )}
 
     <button
