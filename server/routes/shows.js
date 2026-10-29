@@ -47,22 +47,22 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const show = await Show.findById(req.params.id);
+    // TEMPORARY TEST: fetch all shows without filtering
+    const shows = await Show.find({}).sort({
+      featured: -1,
+      date: 1
+    });
 
-    if (!show) {
-      return res.status(404).json({
-        message: 'Performance not found.'
-      });
-    }
+    console.log('Total shows found:', shows.length);
 
-    res.json(show);
+    res.json(shows);
   } catch (error) {
-    console.error('SHOW BY ID API ERROR:', error);
+    console.error('SHOWS API ERROR:', error);
 
-    res.status(400).json({
-      message: 'Invalid performance ID.',
+    res.status(500).json({
+      message: 'Unable to load performances.',
       error: error.message
     });
   }
