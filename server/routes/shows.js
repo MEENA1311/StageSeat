@@ -6,72 +6,35 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { search, genre, city } = req.query;
+    await Show.db.asPromise();
 
-    const filter = {
-      date: {
-        $gte: new Date(Date.now() - 86400000)
-      }
-    };
+    const database = Show.db.name;
+    const collection = Show.collection.name;
 
-    if (genre && genre !== 'All') {
-      filter.genre = genre;
-    }
+    const collections = await Show.db.db
+      .listCollections()
+      .toArray();
 
-    if (city) {
-      filter.city = new RegExp(city, 'i');
-    }
-
-    if (search) {
-      filter.$or = [
-        { title: new RegExp(search, 'i') },
-        { venue: new RegExp(search, 'i') },
-        { city: new RegExp(search, 'i') },
-        { company: new RegExp(search, 'i') }
-      ];
-    }
-
-    const shows = await Show.find(filter).sort({
-      featured: -1,
-      date: 1
-    });
-
-    res.json(shows);
-  } catch (error) {
-    console.error('SHOWS API ERROR:', error);
-
-    res.status(500).json({
-      message: 'Unable to load performances.',
-      error: error.message
-    });
-  }
-});
-
-router.get('/', async (req, res) => {
-  try {
-    const db = Show.db;
-
-    const databaseName = db.name;
-    const collectionName = Show.collection.name;
     const count = await Show.countDocuments({});
 
-    console.log({
-      databaseName,
-      collectionName,
-      count
-    });
+    console.log('DATABASE:', database);
+    console.log('COLLECTION:', collection);
+    console.log('AVAILABLE COLLECTIONS:', collections.map(c => c.name));
+    console.log('SHOW COUNT:', count);
 
     res.json({
-      databaseName,
-      collectionName,
+      database,
+      collection,
+      availableCollections: collections.map(c => c.name),
       count,
       shows: await Show.find({})
     });
   } catch (error) {
-    console.error('SHOWS DIAGNOSTIC ERROR:', error);
+    console.error('SHOW DIAGNOSTIC ERROR:', error);
 
     res.status(500).json({
-      message: error.message
+      message: 'Database diagnostic failed.',
+      error: error.message
     });
   }
 });
