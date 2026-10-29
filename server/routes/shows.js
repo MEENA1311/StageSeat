@@ -49,21 +49,29 @@ router.get('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    // TEMPORARY TEST: fetch all shows without filtering
-    const shows = await Show.find({}).sort({
-      featured: -1,
-      date: 1
+    const db = Show.db;
+
+    const databaseName = db.name;
+    const collectionName = Show.collection.name;
+    const count = await Show.countDocuments({});
+
+    console.log({
+      databaseName,
+      collectionName,
+      count
     });
 
-    console.log('Total shows found:', shows.length);
-
-    res.json(shows);
+    res.json({
+      databaseName,
+      collectionName,
+      count,
+      shows: await Show.find({})
+    });
   } catch (error) {
-    console.error('SHOWS API ERROR:', error);
+    console.error('SHOWS DIAGNOSTIC ERROR:', error);
 
     res.status(500).json({
-      message: 'Unable to load performances.',
-      error: error.message
+      message: error.message
     });
   }
 });
